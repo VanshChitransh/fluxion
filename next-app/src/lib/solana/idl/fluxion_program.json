@@ -1,0 +1,549 @@
+{
+  "address": "2nGrkskjUEF5pkDgvrdSMsz9f59GX6a6M8rwZAahdTFL",
+  "metadata": {
+    "name": "fluxion_program",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "claim_nft_reward",
+      "docs": [
+        "Claim NFT reward (records the claim on-chain)"
+      ],
+      "discriminator": [
+        120,
+        5,
+        199,
+        83,
+        114,
+        16,
+        76,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "nft_claim",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_profile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "reward_type",
+          "type": {
+            "defined": {
+              "name": "RewardType"
+            }
+          }
+        },
+        {
+          "name": "metadata_uri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "initialize_user",
+      "docs": [
+        "Initialize a new user profile"
+      ],
+      "discriminator": [
+        111,
+        17,
+        185,
+        250,
+        60,
+        122,
+        38,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "username",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "record_game_result",
+      "docs": [
+        "Record a game result on-chain"
+      ],
+      "discriminator": [
+        76,
+        178,
+        240,
+        50,
+        154,
+        129,
+        198,
+        67
+      ],
+      "accounts": [
+        {
+          "name": "game_result",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_profile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "game_type",
+          "type": {
+            "defined": {
+              "name": "GameType"
+            }
+          }
+        },
+        {
+          "name": "result",
+          "type": {
+            "defined": {
+              "name": "GameResultData"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_elo",
+      "docs": [
+        "Update user ELO after a game"
+      ],
+      "discriminator": [
+        68,
+        19,
+        100,
+        169,
+        152,
+        2,
+        204,
+        112
+      ],
+      "accounts": [
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "elo_change",
+          "type": "i16"
+        },
+        {
+          "name": "game_won",
+          "type": "bool"
+        },
+        {
+          "name": "game_type",
+          "type": {
+            "defined": {
+              "name": "GameType"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "GameResult",
+      "discriminator": [
+        154,
+        160,
+        133,
+        130,
+        0,
+        179,
+        92,
+        10
+      ]
+    },
+    {
+      "name": "NftClaim",
+      "discriminator": [
+        1,
+        216,
+        111,
+        198,
+        212,
+        242,
+        101,
+        243
+      ]
+    },
+    {
+      "name": "UserProfile",
+      "discriminator": [
+        32,
+        37,
+        119,
+        205,
+        179,
+        180,
+        13,
+        194
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "UsernameTooLong",
+      "msg": "Username must be 32 characters or less"
+    },
+    {
+      "code": 6001,
+      "name": "UsernameEmpty",
+      "msg": "Username cannot be empty"
+    },
+    {
+      "code": 6002,
+      "name": "Unauthorized",
+      "msg": "Unauthorized: You don't own this profile"
+    },
+    {
+      "code": 6003,
+      "name": "UriTooLong",
+      "msg": "Metadata URI too long (max 200 characters)"
+    }
+  ],
+  "types": [
+    {
+      "name": "GameResult",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "player",
+            "type": "pubkey"
+          },
+          {
+            "name": "game_type",
+            "type": {
+              "defined": {
+                "name": "GameType"
+              }
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "won",
+            "type": "bool"
+          },
+          {
+            "name": "elo_change",
+            "type": "i16"
+          },
+          {
+            "name": "final_elo",
+            "type": "u16"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "pnl",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GameResultData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "won",
+            "type": "bool"
+          },
+          {
+            "name": "elo_change",
+            "type": "i16"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "pnl",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GameType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "PredictBattle"
+          },
+          {
+            "name": "BattleRoyale"
+          }
+        ]
+      }
+    },
+    {
+      "name": "NftClaim",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "player",
+            "type": "pubkey"
+          },
+          {
+            "name": "reward_type",
+            "type": {
+              "defined": {
+                "name": "RewardType"
+              }
+            }
+          },
+          {
+            "name": "metadata_uri",
+            "type": "string"
+          },
+          {
+            "name": "claimed_at",
+            "type": "i64"
+          },
+          {
+            "name": "elo_at_claim",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RewardType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "DailyLogin"
+          },
+          {
+            "name": "TierAchievement"
+          },
+          {
+            "name": "WinStreak"
+          },
+          {
+            "name": "Tournament"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserProfile",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "username",
+            "type": "string"
+          },
+          {
+            "name": "elo",
+            "type": "u16"
+          },
+          {
+            "name": "total_games",
+            "type": "u32"
+          },
+          {
+            "name": "wins",
+            "type": "u32"
+          },
+          {
+            "name": "losses",
+            "type": "u32"
+          },
+          {
+            "name": "predict_games",
+            "type": "u32"
+          },
+          {
+            "name": "battle_games",
+            "type": "u32"
+          },
+          {
+            "name": "highest_elo",
+            "type": "u16"
+          },
+          {
+            "name": "total_earnings",
+            "type": "i64"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "last_played",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ]
+}
