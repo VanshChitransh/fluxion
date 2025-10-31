@@ -14,6 +14,8 @@ import { useBlockchain } from '@/contexts/BlockchainContext';
 import { GameType } from '@/lib/solana/program';
 import { TransactionNotification } from '@/components/blockchain/TransactionNotification';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { BlockchainAccountPrompt } from '@/components/blockchain/BlockchainAccountPrompt';
+import { GameResultModal } from '@/components/blockchain/GameResultModal';
 
 interface PredictBattleGameProps {
   onComplete?: () => void;
@@ -51,6 +53,11 @@ export function PredictBattleGame({ onComplete }: PredictBattleGameProps) {
   const [error, setError] = useState<string | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
   const previousPriceRef = useRef<number | null>(null);
+  
+  // Blockchain prompts
+  const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [pendingGameResult, setPendingGameResult] = useState<any>(null);
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -424,30 +431,20 @@ export function PredictBattleGame({ onComplete }: PredictBattleGameProps) {
         setResult(mockResult);
         setPhase('result');
 
-        // Record on blockchain if wallet is connected and profile exists
-        if (connected && profileExists) {
-          try {
-            console.log('Recording game result on-chain...');
-            
-            // Update ELO
-            await updateElo(eloChange, isCorrect, GameType.PredictBattle);
-            
-            // Record game result
-            const pnlInCents = Math.floor(priceChange * 10000); // Convert to cents
-            await recordGame(
-              GameType.PredictBattle,
-              isCorrect,
-              eloChange,
-              'SOL/USDC',
-              pnlInCents
-            );
-            
-            console.log('Game result recorded on blockchain!');
-          } catch (blockchainError) {
-            console.error('Failed to record on blockchain:', blockchainError);
-            // Don't block the UI, just log the error
-          }
-        }
+        // Store game result data for blockchain modal
+        const pnlInCents = Math.floor(priceChange * 10000); // Convert to cents
+        setPendingGameResult({
+          won: isCorrect,
+          eloChange,
+          gameType: GameType.PredictBattle,
+          symbol: 'SOL/USDC',
+          pnl: pnlInCents
+        });
+
+        // Show the blockchain recording modal after a delay
+        setTimeout(() => {
+          setShowResultModal(true);
+        }, 3000); // Wait 3 seconds to let user see result first
 
         // Confetti for wins!
         if (mockResult.correct) {
@@ -541,6 +538,17 @@ export function PredictBattleGame({ onComplete }: PredictBattleGameProps) {
   };
 
   const handleStartGame = () => {
+    // Check if user wants to use blockchain
+    // If wallet connected but no profile, prompt to create
+    // If no wallet, give option to connect or play without
+    if (connected && !profileExists) {
+      setShowAccountPrompt(true);
+    } else {
+      startGameCountdown();
+    }
+  };
+
+  const startGameCountdown = () => {
     setPhase('countdown');
     setCountdown(3);
   };
@@ -607,6 +615,8 @@ export function PredictBattleGame({ onComplete }: PredictBattleGameProps) {
     setPrediction(null);
     setResult(null);
     setChartData([]);
+    setShowResultModal(false);
+    setPendingGameResult(null);
   };
 
   return (
@@ -920,6 +930,30 @@ export function PredictBattleGame({ onComplete }: PredictBattleGameProps) {
         </Alert>
       )}
       </div>
+      
+      {/* Blockchain Account Prompt */}
+      {showAccountPrompt && (
+        <BlockchainAccountPrompt
+          onClose={() => setShowAccountPrompt(false)}
+          onSuccess={() => {
+            setShowAccountPrompt(false);
+            startGameCountdown();
+          }}
+          onSkip={() => {
+            setShowAccountPrompt(false);
+            startGameCountdown();
+          }}
+        />
+      )}
+      
+      {/* Game Result Modal */}
+      {showResultModal && pendingGameResult && (
+        <GameResultModal
+          isOpen={showResultModal}
+          onClose={() => setShowResultModal(false)}
+          gameResult={pendingGameResult}
+        />
+      )}
       
       {/* Transaction Notification */}
       <TransactionNotification

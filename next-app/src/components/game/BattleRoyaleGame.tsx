@@ -15,6 +15,8 @@ import { useBlockchain } from '@/contexts/BlockchainContext';
 import { GameType } from '@/lib/solana/program';
 import { TransactionNotification } from '@/components/blockchain/TransactionNotification';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { BlockchainAccountPrompt } from '@/components/blockchain/BlockchainAccountPrompt';
+import { GameResultModal } from '@/components/blockchain/GameResultModal';
 
 interface BattleRoyaleGameProps {
   onComplete?: () => void;
@@ -77,6 +79,11 @@ export function BattleRoyaleGame({ onComplete }: BattleRoyaleGameProps) {
 
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Blockchain prompts
+  const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [pendingGameResult, setPendingGameResult] = useState<any>(null);
 
   // Chart refs
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -412,32 +419,20 @@ export function BattleRoyaleGame({ onComplete }: BattleRoyaleGameProps) {
 
     setPhase('finished');
 
-    // Record on blockchain if wallet is connected and profile exists
-    if (connected && profileExists) {
-      (async () => {
-        try {
-          console.log('Recording Battle Royale result on-chain...');
-          
-          // Update ELO
-          await updateElo(eloChange, won, GameType.BattleRoyale);
-          
-          // Record game result
-          const pnlInCents = Math.floor(playerPL * 100); // Convert to cents
-          await recordGame(
-            GameType.BattleRoyale,
-            won,
-            eloChange,
-            'SOL/USDC',
-            pnlInCents
-          );
-          
-          console.log('Battle Royale result recorded on blockchain!');
-        } catch (blockchainError) {
-          console.error('Failed to record on blockchain:', blockchainError);
-          // Don't block the UI, just log the error
-        }
-      })();
-    }
+    // Store game result data for blockchain modal
+    const pnlInCents = Math.floor(playerPL * 100); // Convert to cents
+    setPendingGameResult({
+      won,
+      eloChange,
+      gameType: GameType.BattleRoyale,
+      symbol: 'SOL/USDC',
+      pnl: pnlInCents
+    });
+
+    // Show the blockchain recording modal after a delay
+    setTimeout(() => {
+      setShowResultModal(true);
+    }, 3000); // Wait 3 seconds to let user see result first
 
     if (won) {
       confetti({
@@ -449,6 +444,15 @@ export function BattleRoyaleGame({ onComplete }: BattleRoyaleGameProps) {
   };
 
   const handleStart = () => {
+    // Check if user wants to use blockchain
+    if (connected && !profileExists) {
+      setShowAccountPrompt(true);
+    } else {
+      startGameCountdown();
+    }
+  };
+
+  const startGameCountdown = () => {
     setPhase('countdown');
     setCountdown(3);
   };
@@ -473,6 +477,8 @@ export function BattleRoyaleGame({ onComplete }: BattleRoyaleGameProps) {
     });
     setResult(null);
     setError(null);
+    setShowResultModal(false);
+    setPendingGameResult(null);
   };
 
   const currentValue = playerState.balance + (playerState.solHoldings * (currentPrice || 0));
@@ -769,6 +775,29 @@ export function BattleRoyaleGame({ onComplete }: BattleRoyaleGameProps) {
                   </div>
                 </div>
 
+                {/* Blockchain Status */}
+                {!connected && (
+                  <div className="p-3 bg-blue-950/30 border border-blue-500/30 rounded-lg">
+                    <p className="text-sm text-blue-300">
+                      ℹ️ Connect your wallet to record results on Solana blockchain
+                    </p>
+                  </div>
+                )}
+                {connected && !profileExists && (
+                  <div className="p-3 bg-yellow-950/30 border border-yellow-500/30 rounded-lg">
+                    <p className="text-sm text-yellow-300">
+                      ⚠️ Initialize your blockchain profile to record results on-chain
+                    </p>
+                  </div>
+                )}
+                {connected && profileExists && (
+                  <div className="p-3 bg-green-950/30 border border-green-500/30 rounded-lg">
+                    <p className="text-sm text-green-300">
+                      ✅ Results recorded on Solana blockchain
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-4 pt-4">
                   <Button onClick={handlePlayAgain} size="lg" className="flex-1">
                     ⚔️ Battle Again
@@ -782,6 +811,30 @@ export function BattleRoyaleGame({ onComplete }: BattleRoyaleGameProps) {
           </div>
         )}
       </div>
+      
+      {/* Blockchain Account Prompt */}
+      {showAccountPrompt && (
+        <BlockchainAccountPrompt
+          onClose={() => setShowAccountPrompt(false)}
+          onSuccess={() => {
+            setShowAccountPrompt(false);
+            startGameCountdown();
+          }}
+          onSkip={() => {
+            setShowAccountPrompt(false);
+            startGameCountdown();
+          }}
+        />
+      )}
+      
+      {/* Game Result Modal */}
+      {showResultModal && pendingGameResult && (
+        <GameResultModal
+          isOpen={showResultModal}
+          onClose={() => setShowResultModal(false)}
+          gameResult={pendingGameResult}
+        />
+      )}
       
       {/* Transaction Notification */}
       <TransactionNotification

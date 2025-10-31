@@ -8,9 +8,9 @@ import { Program, AnchorProvider, web3, BN } from '@coral-xyz/anchor';
 import { Connection, PublicKey, Keypair } from '@solana/web3.js';
 import { AnchorWallet } from '@solana/wallet-adapter-react';
 
-// Import the IDL (will be generated after build)
-// For now, we'll type it manually
-export type FluxionProgram = any; // Will be replaced with actual IDL type
+// Import the IDL
+import { FluxionProgram } from './idl/fluxion_program';
+import IDL from './idl/fluxion_program.json';
 
 export const PROGRAM_ID = new PublicKey(
   process.env.NEXT_PUBLIC_PROGRAM_ID || '2nGrkskjUEF5pkDgvrdSMsz9f59GX6a6M8rwZAahdTFL'
@@ -257,9 +257,8 @@ export function createFluxionClient(
   programId: PublicKey = PROGRAM_ID
 ): FluxionClient {
   const provider = getProvider(connection, wallet);
-  // For now, we'll need to import the actual IDL after building
-  // const program = new Program(IDL, programId, provider);
-  const program = {} as any; // Placeholder
+  // Create program instance with the loaded IDL
+  const program = new Program(IDL as any, programId, provider);
   return new FluxionClient(program, provider);
 }
 

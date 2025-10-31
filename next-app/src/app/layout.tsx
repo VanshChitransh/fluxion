@@ -6,7 +6,6 @@ import { AuthProvider } from "../components/providers/AuthProvider";
 import { useAuthContext } from "../components/providers/AuthProvider";
 import { WalletProvider } from "../components/wallet/WalletProvider";
 import { BlockchainProvider } from "../contexts/BlockchainContext";
-import { ProfileInitializer } from "../components/blockchain/ProfileInitializer";
 import Header from "../components/layout/Header";
 import LoadingScreen from "../components/ui/LoadingScreen";
 
@@ -20,10 +19,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ProfileInitializer>
+    <>
       <Header />
       {children}
-    </ProfileInitializer>
+    </>
   );
 }
 

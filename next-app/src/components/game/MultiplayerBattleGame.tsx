@@ -14,6 +14,8 @@ import { useBlockchain } from '@/contexts/BlockchainContext';
 import { GameType } from '@/lib/solana/program';
 import { TransactionNotification } from '@/components/blockchain/TransactionNotification';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { BlockchainAccountPrompt } from '@/components/blockchain/BlockchainAccountPrompt';
+import { GameResultModal } from '@/components/blockchain/GameResultModal';
 
 interface MultiplayerBattleGameProps {
   onComplete?: () => void;
@@ -51,7 +53,7 @@ export function MultiplayerBattleGame({ onComplete }: MultiplayerBattleGameProps
     volatility: 0.03
   });
 
-  const [phase, setPhase] = useState<GamePhase>('countdown');
+  const [phase, setPhase] = useState<GamePhase>('ready');
   const [countdown, setCountdown] = useState(5);
   const [timeRemaining, setTimeRemaining] = useState(30);
   
@@ -80,6 +82,11 @@ export function MultiplayerBattleGame({ onComplete }: MultiplayerBattleGameProps
 
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Blockchain prompts
+  const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [pendingGameResult, setPendingGameResult] = useState<any>(null);
 
   // Chart refs
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -338,32 +345,20 @@ export function MultiplayerBattleGame({ onComplete }: MultiplayerBattleGameProps
 
     setPhase('finished');
 
-    // Record on blockchain if wallet is connected and profile exists
-    if (connected && profileExists) {
-      (async () => {
-        try {
-          console.log('Recording Multiplayer Battle result on-chain...');
-          
-          // Update ELO
-          await updateElo(eloChange, won, GameType.BattleRoyale);
-          
-          // Record game result
-          const pnlInCents = Math.floor(p1PL * 100); // Convert to cents
-          await recordGame(
-            GameType.BattleRoyale,
-            won,
-            eloChange,
-            'SOL/USDC',
-            pnlInCents
-          );
-          
-          console.log('Multiplayer Battle result recorded on blockchain!');
-        } catch (blockchainError) {
-          console.error('Failed to record on blockchain:', blockchainError);
-          // Don't block the UI, just log the error
-        }
-      })();
-    }
+    // Store game result data for blockchain modal
+    const pnlInCents = Math.floor(p1PL * 100); // Convert to cents
+    setPendingGameResult({
+      won,
+      eloChange,
+      gameType: GameType.BattleRoyale,
+      symbol: 'SOL/USDC',
+      pnl: pnlInCents
+    });
+
+    // Show the blockchain recording modal after a delay
+    setTimeout(() => {
+      setShowResultModal(true);
+    }, 3000); // Wait 3 seconds to let user see result first
 
     if (won) {
       confetti({
@@ -371,6 +366,15 @@ export function MultiplayerBattleGame({ onComplete }: MultiplayerBattleGameProps
         spread: 100,
         origin: { y: 0.6 }
       });
+    }
+  };
+
+  const handleStart = () => {
+    // Check if user wants to use blockchain
+    if (connected && !profileExists) {
+      setShowAccountPrompt(true);
+    } else {
+      setPhase('countdown');
     }
   };
 
@@ -391,6 +395,35 @@ export function MultiplayerBattleGame({ onComplete }: MultiplayerBattleGameProps
             Real-time competition • 30 seconds
           </p>
         </div>
+
+        {/* Ready State - Start Button */}
+        {phase === 'ready' && (
+          <Card className="bg-gradient-to-br from-red-950/50 to-orange-950/50 border-red-700">
+            <CardContent className="p-12 text-center space-y-6">
+              <div className="text-6xl mb-4">⚔️</div>
+              <h2 className="text-3xl font-bold text-white">Ready for Battle?</h2>
+              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                You'll compete against an opponent in real-time trading.
+                <br />
+                <span className="text-red-400 font-bold">30 seconds</span> to make the most profit!
+              </p>
+              <div className="flex gap-4 justify-center items-center text-sm text-gray-400">
+                <span>🎯 5 Max Trades</span>
+                <span>•</span>
+                <span>💰 $10,000 Starting Balance</span>
+                <span>•</span>
+                <span>🏆 Highest P&L Wins</span>
+              </div>
+              <Button 
+                onClick={handleStart} 
+                size="lg" 
+                className="text-2xl px-12 py-8 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg"
+              >
+                🚀 Start Battle
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Countdown */}
         {phase === 'countdown' && (
@@ -621,6 +654,29 @@ export function MultiplayerBattleGame({ onComplete }: MultiplayerBattleGameProps
                 </div>
               </div>
 
+              {/* Blockchain Status */}
+              {!connected && (
+                <div className="p-3 bg-blue-950/30 border border-blue-500/30 rounded-lg">
+                  <p className="text-sm text-blue-300">
+                    ℹ️ Connect your wallet to record results on Solana blockchain
+                  </p>
+                </div>
+              )}
+              {connected && !profileExists && (
+                <div className="p-3 bg-yellow-950/30 border border-yellow-500/30 rounded-lg">
+                  <p className="text-sm text-yellow-300">
+                    ⚠️ Initialize your blockchain profile to record results on-chain
+                  </p>
+                </div>
+              )}
+              {connected && profileExists && (
+                <div className="p-3 bg-green-950/30 border border-green-500/30 rounded-lg">
+                  <p className="text-sm text-green-300">
+                    ✅ Results recorded on Solana blockchain
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-4">
                 <Button onClick={onComplete} size="lg" className="flex-1">
                   Back to Lobby
@@ -630,6 +686,30 @@ export function MultiplayerBattleGame({ onComplete }: MultiplayerBattleGameProps
           </Card>
         )}
       </div>
+      
+      {/* Blockchain Account Prompt */}
+      {showAccountPrompt && (
+        <BlockchainAccountPrompt
+          onClose={() => setShowAccountPrompt(false)}
+          onSuccess={() => {
+            setShowAccountPrompt(false);
+            setPhase('countdown');
+          }}
+          onSkip={() => {
+            setShowAccountPrompt(false);
+            setPhase('countdown');
+          }}
+        />
+      )}
+      
+      {/* Game Result Modal */}
+      {showResultModal && pendingGameResult && (
+        <GameResultModal
+          isOpen={showResultModal}
+          onClose={() => setShowResultModal(false)}
+          gameResult={pendingGameResult}
+        />
+      )}
       
       {/* Transaction Notification */}
       <TransactionNotification
